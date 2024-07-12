@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 )
@@ -22,9 +21,9 @@ func main() {
 
 	mux.Handle("/app/*", cfg.middlewareMetricsInc(handler))
 
-	mux.HandleFunc("/healthz", readinessHandler)
-	mux.HandleFunc("/metrics", cfg.hitsHandler)
-	mux.HandleFunc("/reset", cfg.resethitsHandler)
+	mux.HandleFunc("GET /api/healthz", readinessHandler)
+	mux.HandleFunc("GET /api/metrics", cfg.hitsHandler)
+	mux.HandleFunc("/api/reset", cfg.resethitsHandler)
 
 	server := &http.Server{
 		Addr:    ":" + port,
@@ -33,19 +32,4 @@ func main() {
 	log.Printf("Serving files from %s on port: %s\n", filepathRoot, port)
 	log.Fatal(server.ListenAndServe())
 
-}
-
-func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		cfg.fileserverHits++
-		//!chain of handler so serveHTTP hands off control to the "next" handler
-		next.ServeHTTP(w, r)
-	})
-}
-
-func (cfg *apiConfig) hitsHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hits: %v", cfg.fileserverHits)
-}
-func (cfg *apiConfig) resethitsHandler(w http.ResponseWriter, r *http.Request) {
-	cfg.fileserverHits = 0
 }
